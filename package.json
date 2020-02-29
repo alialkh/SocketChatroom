@@ -1,0 +1,25 @@
+{
+  "name": "chatroom",
+  "version": "0.0.1",
+  "description": "Basic Chatroom",
+  "main": "index.js",
+  "scripts": {
+    "serve": "nodemon index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/alialkh/SENG513_ASN3.git"
+  },
+  "author": "ali alkhazaly",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/alialkh/SENG513_ASN3/issues"
+  },
+  "homepage": "https://github.com/alialkh/SENG513_ASN3#readme",
+  "dependencies": {
+    "express": "^4.17.1",
+    "nodemon": "^2.0.2",
+    "socket.io": "^2.3.0"
+  }
+}

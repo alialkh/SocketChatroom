@@ -1,0 +1,299 @@
+<!doctype html>
+<html>
+<head>
+
+    <title>Socket.IO chat</title>
+
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+    <link href="https://fonts.googleapis.com/css?family=Montserrat&display=swap" rel="stylesheet">
+
+
+    <style>
+        html { height:auto;}
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font: 16px 'Montserrat', sans-serif; padding-bottom: 2vh; height:100%; overflow-y: hidden; padding-top: 1vh; }
+        form {bottom: 1%; width: 100%;}
+        #m{ width: 85%;}
+        form button
+        {
+            width:12%
+        }
+        .txtBG{
+            display:flex;
+            flex-direction: column;
+            justify-content:flex-end;
+            position: relative;
+            background-color: #98989B;
+            margin-bottom: 25vh;
+
+        }
+        #messages
+        {
+            display:inline-block;
+            flex: 1 1 auto;
+            overflow-y: auto;
+            list-style-type: none;
+            padding-top: 10px;
+            padding-bottom: 3vh;
+        }
+
+        #messages li
+        {
+            margin-bottom:0;
+            padding: 5px 10px;
+        }
+
+        .chat{ padding:0 ; height:auto;}
+        #UserTitle{ width:100% ;background-color: white; margin-bottom:0; padding-bottom:1rem}
+        #OnlineUsers{ width:100% ;background-color: white; margin-bottom:0; padding-bottom: 1rem}
+
+        #Users
+        {
+            list-style-type: none;
+            background-color: #98989B;
+            height: 85vh;
+            padding-top: 10px;
+            padding-bottom: 2.5rem;
+        }
+        #Users li { padding-left: 1vw;}
+    </style>
+</head>
+
+<body class="container-fluid" style="min-height:auto">
+
+    <div class="row" style="margin:0; height: 100%; overflow-y:hidden">
+
+        <div class="col-sm-9 chat" style="overflow:hidden">
+            <p id="UserTitle">Y</p>
+            <div class="txtBG" >
+                <ul id="messages" class="txtBG" style="height:88vh"></ul>
+            </div>
+        </div>
+
+        <div class="col-sm-3">
+            <p id="OnlineUsers">Online Users:</p>
+            <div class="txtBG">
+                <ul id="Users" class="txtBG" style="height:88vh"></ul>
+            </div>
+        </div>
+    </div>
+
+   <nav class="navbar navbar-dark fixed-bottom" style="background-color: #565656;">
+        <form class="form-inline" action="">
+            <input class="form-control mr-sm-2" placeholder="Enter message..." id="m" autocomplete="off" />
+            <button class="btn btn-outline-success my-2 my-sm-0">Send</button>
+        </form>
+   </nav>
+
+<!-- Create the io socket using a library from the internet -->
+<script src="/socket.io/socket.io.js"></script>
+
+<!-- Use all other imports -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.4.1/jquery.js" ></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
+<script type="text/javascript">
+
+    let user = null; // name
+    let color = null;
+    let nameUnderConsideration = null;
+
+    console.log("found");
+    $(function () {
+        var socket = io();
+        $('form').submit(function(e){
+            e.preventDefault(); // prevents page reloading
+            let message = $('#m').val();
+
+            if (message.startsWith("/")) {
+                if (message.startsWith('/nickcolor ')) {
+
+                    message = message.split('/nickcolor')[1].replace(" ", "");
+                    colorToSet = "#" + message;  // remove spaces
+
+                    // must handle these errors caused by this gracefully
+                    if ((message.length) !== 6 || !isHex(message))
+                    {
+                        let failureMsg = `<li class="alert alert-danger" style="margin-bottom:0">Bad colors given, please use the form RRGGBB in hexadecimal values.</li>`;
+                        appendChat(failureMsg)
+                    }
+                    else {
+                        // set the global var
+                        color = colorToSet;
+
+                        // emit to the server that color change has occured
+                        socket.emit('change color', user, colorToSet);
+                        document.cookie = `color=${color}`;
+                    }
+                } else if (message.startsWith('/nick ') && message.split('/nick')[1].replace(" ", "") !== "") {
+                    nameUnderConsideration = message.split('/nick')[1].replace(" ", "");
+                    // request that the server changes your name to something else, give it the old and new name
+                    socket.emit('change name', user, nameUnderConsideration)
+                }
+                else
+                {
+                    let failureMsg = `<li class="alert alert-danger" style="margin-bottom:0">Unrecognized Command:            ${message}</li>`;
+                    appendChat(failureMsg)
+                }
+            }
+            else {
+                socket.emit('chat message', user, message); // we will send the message box value across the socket
+            }
+            $('#m').val(''); // clear the message box
+            return false;
+
+        });
+
+        socket.on("new user", function(name,color)
+        {
+            $('#Users').append(`<li style="color: ${color} ">${name}</li>`);
+        });
+
+        socket.on('successNameChange', function()
+        {
+            // we would show some CSS here aswell to show name change is successful!
+            user =  nameUnderConsideration;
+            $('#UserTitle').html("You are "+user+"." + " Enjoy a nice soothing chat with strangers.");
+            document.cookie = `name=${user}`;
+        });
+
+        socket.on('failedNameChange', function()
+        {
+            let failureMsg = '<li class="alert alert-danger" style="margin-bottom:0">' + `${nameUnderConsideration} nickname is already taken` +'</li>';
+            appendChat(failureMsg)
+
+        });
+
+
+        socket.on('name change acknowledge', function(newName, oldName)
+        {
+            let updateMsg = '<li class="alert alert-primary" style="margin-bottom:0">' + `${oldName} changed his name to ${newName}` +'</li>';
+            appendChat(updateMsg);
+
+            // It will never be the case that two users will have the same name because of checks, but if they do,
+            // it will change both their names to be the new one
+            $('#Users').find("li:contains(" + oldName  + ")").text(newName);
+
+            // If youre the user, tell the socket to log the fact that this acknowledge was sent out
+            // only the originating user does this so its only logged once on the server side
+            user === newName ? socket.emit('sent message', updateMsg) : '';
+        });
+
+
+        socket.on('color change acknowledge', function(name,color)
+        {
+            // if there are duplicate names, which there never will be because of checks, it will recolor both
+            $('#Users').find("li:contains(" + name  + ")").css({'color' : color});
+        });
+
+        // When we receive a message through the socket, change our output
+        socket.on('chat message', function(time, sender, txtColor, msg)
+        {
+            var sentMessage =
+                '<li style="color:white">'
+                + timeHandler(time)+ " "+`<span style='color: ${txtColor}' >`+  sender + '</span>' + " " + msg.bold()
+                + '</li>';
+
+            appendChat(sentMessage);
+            // If you're the one that sent it, tell the server that it has been received, so it can log the message,
+            // we really just need this for the formatting to be saved on the server
+            if (sender === user)
+                socket.emit('sent message', sentMessage);
+        });
+
+        // server asks us for cookies
+        socket.on('got cookies', function(currentNames)
+        {
+            let name = null;
+            let color = null;
+
+            // from https://developer.mozilla.org/en-US/docs/Web/API/Document/cookie
+            if (document.cookie.split(';').filter((item) => item.trim().startsWith('name=')).length &&
+                (document.cookie.split(';').filter((item) => item.trim().startsWith('color=')).length))
+            {
+                name = document.cookie.replace(/(?:(?:^|.*;\s*)name\s*\=\s*([^;]*).*$)|^.*$/, "$1");
+                color = document.cookie.replace(/(?:(?:^|.*;\s*)color\s*\=\s*([^;]*).*$)|^.*$/, "$1");
+            }
+
+            // in the case that we already have a user with that name, let the user get a new name
+            // currentNames.forEach(function(value)
+            // {
+            //     if (name === value.Name) { name = null; color = null;}
+            // });
+
+            // respond with cookies or not
+           socket.emit('cookies response', name,color)
+        });
+
+        // for people who just joined, get our name, color, and chat log from server
+        socket.on('initialization', function(msg,txtColor, log, nameColorsArray)
+        {
+            // on startup clear the online users list from legacy connections
+            $('#Users').html('');
+
+            user = msg;
+            color = txtColor;
+            document.cookie = `name=${user}`;
+            document.cookie = `color=${color}`;
+            console.log("Color i was given: ", txtColor);
+
+            log.forEach(function(value)
+            {
+                $('#messages').append(value);
+            });
+
+            $('#UserTitle').html("You are "+user+"." +" Enjoy a nice soothing chat with strangers.");
+
+            nameColorsArray.forEach(function(value)
+            {
+                $('#Users').append(`<li style="color: ${value.Color} ">${value.Name}</li>`)
+            })
+
+        });
+
+        // https://stackoverflow.com/questions/10428627/remove-li-containing-string
+        socket.on('disconnected', function(user)
+        {
+            $('#Users').find("li:contains(" + user  + ")").remove();
+        })
+
+    });
+
+    /**
+     * Appends to the chatbox and animates the append
+     *
+     * @param addition
+     */
+    function appendChat(addition)
+    {
+        $('#messages').append(addition);
+        $("#messages").animate({scrollTop: ($('#messages')[0].scrollHeight)},1000);
+    }
+
+    function timeHandler(time) {
+        time = new Date(time);
+        let hours = time.getHours();
+        let minutes = time.getMinutes();
+        hours = (hours < 10 ? '0' : '') + hours;
+        minutes = (minutes < 10 ? '0' : '') + minutes;
+        return hours +":" + minutes;
+    }
+    function isHex(string)
+    {
+        var hexValues = [ '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
+        'a', 'b', 'c', 'd', 'e', 'f', 'A', 'B', 'C', 'D', 'E', 'F' ]
+
+        let i =0;
+        while (i<string.length)
+        {
+            if (!hexValues.includes(string[i]))
+                return false
+        i++;
+        }
+
+        return true
+    }
+
+</script>
+</body>
+</html>

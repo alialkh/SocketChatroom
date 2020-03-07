@@ -26,9 +26,10 @@ var chatLog = [];
 // we have one of these for every new connection
 io.on('connection', function(socket) {
 
-    let cookiesRead = true;
+    console.log("Connected User: ",socket.id);
 
-    socket.emit('got cookies');
+
+    socket.emit('got cookies',generateNameColorArray());
 
     // if they have a cookie and they're initializing
     socket.on('cookies response', function(user, color)
@@ -46,7 +47,7 @@ io.on('connection', function(socket) {
                 }
             );
 
-            console.log("User:",user,".    Color:",color,".");
+            console.log("New User:",user,"    Assigned Color:",color,".");
 
             socket.emit('initialization', user, color, chatLog, generateNameColorArray());
             socket.broadcast.emit("new user", user, color);
@@ -54,7 +55,6 @@ io.on('connection', function(socket) {
     });
     function newUser(){
 
-        console.log("Making new User!");
         // Will contain the format [name, color]
         let newUser = generateUser(socket);
 
@@ -67,19 +67,18 @@ io.on('connection', function(socket) {
 
     // On a disconnect
     socket.on('disconnect', function () {
-        console.log("Disconnecter :  ",socket.id);
-        console.log("Current Users on Disconnect", currentUsers);
+        console.log("Disconnected User :  ",socket.id);
         let indexToRemove = findIndexGivenSocket(socket.id);
 
         if (indexToRemove !== -1) {
             let removedUser = currentUsers.splice(indexToRemove, 1);
             console.log(removedUser);
-            console.log("REMOVED THE GUY", removedUser[0].Name);
+            console.log("REMOVED USER: ", removedUser[0].Name);
             // Acknowledge to everyone
             io.emit('disconnected', removedUser[0].Name)
         }
         else
-            console.log("FAILED TO FIND USER WHO DISCONNECTED!! \n\n")
+            console.log("FAILED TO FIND USER OF WHO DISCONNECTED!! \n\n")
     });
 
     // when a message request is received
@@ -163,7 +162,6 @@ function generateRandomColor() {
 }
 
 const findColor = function(user) {
-    // console.log("Current Users on findColor: ", currentUsers);
     for (let j = 0; j < currentUsers.length; j++) {
         if (currentUsers[j].Name === user) {
             return currentUsers[j].Color
@@ -178,7 +176,6 @@ const setColor = function(user,color)
             currentUsers[j].Color = color;
         }
     }
-    console.log("Updated Current Users Array: ",currentUsers);
 };
 
 
@@ -203,7 +200,6 @@ function generateNameColorArray()
  */
 const findIndexGivenName = function(name)
 {
-    console.log("Name I was passed: ",name);
     let indexOfName=-1;
     currentUsers.forEach(function(value,index)
     {
@@ -223,7 +219,6 @@ const findIndexGivenSocket = function(socketID)
             indexOfSocket = j;
         }
     }
-    console.log("index I decided on",indexOfSocket);
     return indexOfSocket
 };
 

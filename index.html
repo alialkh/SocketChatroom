@@ -9,31 +9,36 @@
 
 
     <style>
-        html { height:auto;}
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font: 16px 'Montserrat', sans-serif; padding-bottom: 2vh; height:100%; overflow-y: hidden; padding-top: 1vh; }
-        form {bottom: 1%; width: 100%;}
+        html {}
+        * { margin: 0; padding: 0; }
+        body { font: 16px 'Montserrat', sans-serif; height:100%; padding-top: 1vh; padding-left:0; padding-right:0; }
+        form { width: 100%;}
+
+        /* Message box for typing messages */
         #m{ width: 85%;}
+
         form button
         {
             width:12%
         }
         .txtBG{
-            display:flex;
-            flex-direction: column;
-            justify-content:flex-end;
-            position: relative;
             background-color: #98989B;
-            margin-bottom: 25vh;
-
         }
+
+        .txtBox
+        {
+            max-height: 89vh;
+        }
+
         #messages
         {
-            flex: 1 1 auto;
-            overflow-y: auto;
+            display:flex;
+            flex-direction: column;
+            height: 85vh;
+            overflow-y: scroll;
             list-style-type: none;
             padding-top: 10px;
-            padding-bottom: 3vh;
+            margin-bottom:0;
         }
 
         #messages li
@@ -42,12 +47,23 @@
             padding: 5px 10px;
         }
 
-        .chat{ padding:0 ; height:auto;}
+        #messages li:first-child {
+            margin-top: auto;
+        }
+
+        #messages li:last-child {
+            margin-bottom: 1vh;
+        }
+
+        .chat{ padding:0 ; height: fit-content;}
         #UserTitle{ width:100% ;background-color: white; margin-bottom:0; padding-bottom:1rem}
         #OnlineUsers{ width:100% ;background-color: white; margin-bottom:0; padding-bottom: 1rem}
 
         #Users
         {
+            display:flex;
+            flex-direction: column;
+            justify-content:flex-end;
             list-style-type: none;
             background-color: #98989B;
             height: 85vh;
@@ -58,32 +74,31 @@
     </style>
 </head>
 
-<body class="container-fluid" style="min-height:auto">
+<body style="max-height:100%">
 
-    <div class="row" style="margin:0; height: 100%; overflow-y:hidden">
 
-        <div class="col-sm-9 chat" style="overflow:hidden">
+    <div class="row container-fluid" style="margin:0;">
+
+        <div class="col-sm-9 chat" style="display:inline-block; white-space: nowrap;">
             <p id="UserTitle">Y</p>
-            <div class="txtBG" >
-                <ul id="messages" class="txtBG" style="height:88vh"></ul>
+            <div class="txtBG txtBox flex-container" >
+                <ul id="messages" class="flex txtBG"></ul>
             </div>
         </div>
 
-        <div class="col-sm-3">
+        <div class="col-sm-3" style="display:inline-block; white-space: nowrap; height:fit-content">
             <p id="OnlineUsers">Online Users:</p>
-            <div class="txtBG">
-                <ul id="Users" class="txtBG" style="height:88vh"></ul>
+            <div class="txtBG txtBox" style=" white-space: nowrap;">
+                <ul id="Users" class="txtBG" style="height:85vh; margin-bottom:0"></ul>
             </div>
         </div>
     </div>
-
-   <nav class="navbar navbar-dark fixed-bottom" style="background-color: #565656;">
+   <nav class="navbar navbar-dark fixed-bottom" style="background-color: #565656; width:100%; margin-top:0;">
         <form class="form-inline" action="">
             <input class="form-control mr-sm-2" placeholder="Enter message..." id="m" autocomplete="off" />
             <button class="btn btn-outline-success my-2 my-sm-0">Send</button>
         </form>
    </nav>
-
 <!-- Create the io socket using a library from the internet -->
 <script src="/socket.io/socket.io.js"></script>
 
@@ -203,25 +218,25 @@
         // server asks us for cookies
         socket.on('got cookies', function(currentNames)
         {
-            let name = null;
+            let userName = null;
             let color = null;
 
             // from https://developer.mozilla.org/en-US/docs/Web/API/Document/cookie
             if (document.cookie.split(';').filter((item) => item.trim().startsWith('name=')).length &&
                 (document.cookie.split(';').filter((item) => item.trim().startsWith('color=')).length))
             {
-                name = document.cookie.replace(/(?:(?:^|.*;\s*)name\s*\=\s*([^;]*).*$)|^.*$/, "$1");
+                userName = document.cookie.replace(/(?:(?:^|.*;\s*)name\s*\=\s*([^;]*).*$)|^.*$/, "$1");
                 color = document.cookie.replace(/(?:(?:^|.*;\s*)color\s*\=\s*([^;]*).*$)|^.*$/, "$1");
             }
 
             // in the case that we already have a user with that name, let the user get a new name
-            // currentNames.forEach(function(value)
-            // {
-            //     if (name === value.Name) { name = null; color = null;}
-            // });
+            currentNames.forEach(function(value)
+            {
+                if (userName === value.Name) { userName = null; color = null;}
+            });
 
             // respond with cookies or not
-           socket.emit('cookies response', name,color)
+           socket.emit('cookies response', userName,color)
         });
 
         // for people who just joined, get our name, color, and chat log from server

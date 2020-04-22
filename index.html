@@ -115,6 +115,8 @@
     console.log("found");
     $(function () {
         alert("Welcome to Alis Socket Chatroom, this deployment of Assignment 3 is a tribute to the fun I had in the SENG513 class.");
+        alert("Commands you can use:\n\n/nick newnickname\n/nickcolor 12abcd, or any other hexadecimal value\n\n more to come if I decide to work more on this");
+
         var socket = io();
         $('form').submit(function(e){
             e.preventDefault(); // prevents page reloading

@@ -19,7 +19,7 @@
   },
   "homepage": "https://github.com/alialkh/SENG513_ASN3#readme",
   "dependencies": {
-    "express": "^4.17.1",
+    "express": "^4.18.2",
     "nodemon": "^2.0.2",
     "socket.io": "^2.4.0"
   },
